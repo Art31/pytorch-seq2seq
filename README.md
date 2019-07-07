@@ -1,3 +1,5 @@
+Original repo [here](https://github.com/bentrevett/pytorch-seq2seq).
+
 # PyTorch Seq2Seq
 
 This repo contains tutorials covering understanding and implementing sequence-to-sequence (seq2seq) models using [PyTorch](https://github.com/pytorch/pytorch) 1.0 and [TorchText](https://github.com/pytorch/text) 0.3 using Python 3.7.
