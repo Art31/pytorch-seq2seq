@@ -5,12 +5,13 @@ from torch import Tensor
 
 from torchtext.datasets import TranslationDataset, Multi30k
 from torchtext.data import Field, BucketIterator
+from torchtext import data
 
 import spacy
-
-import random
-import math
-import time
+from tqdm import tqdm 
+import pandas as pd
+import random, os
+import math, time
 
 SEED = 1234
 
@@ -18,14 +19,14 @@ random.seed(SEED)
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
-spacy_de = spacy.load('de_core_news_md')
+spacy_pt = spacy.load('pt_core_news_md')
 spacy_en = spacy.load('en_core_web_md')
 
-def tokenize_de(text):
+def tokenize_pt(text):
     """
-    Tokenizes German text from a string into a list of strings
+    Tokenizes Port text from a string into a list of strings
     """
-    return [tok.text for tok in spacy_de.tokenizer(text)]
+    return [tok.text for tok in spacy_pt.tokenizer(text)]
 
 def tokenize_en(text):
     """
@@ -33,7 +34,35 @@ def tokenize_en(text):
     """
     return [tok.text for tok in spacy_en.tokenizer(text)]
 
-SRC = Field(tokenize=tokenize_de, 
+def read_data(src_data, trg_data):
+    
+    if src_data is not None:
+        try:
+            src_data = open(src_data).read().strip().split('\n')
+        except:
+            print("error: '" + src_data + "' file not found")
+            quit()
+    
+    if trg_data is not None:
+        try:
+            trg_data = open(trg_data).read().strip().split('\n')
+        except:
+            print("error: '" + trg_data + "' file not found")
+            quit()
+    return src_data, trg_data
+
+src_train_data_path = '../pt_customized_transformer/data/port_train.txt'
+trg_train_data_path = '../pt_customized_transformer/data/eng_train.txt'
+src_test_data_path = '../pt_customized_transformer/data/port_test.txt'
+trg_test_data_path = '../pt_customized_transformer/data/eng_test.txt'
+src_dev_data_path = '../pt_customized_transformer/data/port_dev.txt'
+trg_dev_data_path = '../pt_customized_transformer/data/eng_dev.txt'
+
+src_data_train, trg_data_train = read_data(src_train_data_path, trg_train_data_path)
+src_data_test, trg_data_test = read_data(src_test_data_path, trg_test_data_path)
+src_data_dev, trg_data_dev = read_data(src_dev_data_path, trg_dev_data_path)
+
+SRC = Field(tokenize=tokenize_pt, 
             init_token='<sos>', 
             eos_token='<eos>', 
             lower=True)
@@ -43,13 +72,28 @@ TRG = Field(tokenize = tokenize_en,
             eos_token='<eos>', 
             lower=True)
 
-train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), 
-                                                    fields = (SRC, TRG))
+def generate_dataset(src_data, trg_data):
 
-print(vars(train_data.examples[0]))
+    raw_data = {'src' : [line for line in src_data], 'trg': [line for line in trg_data]}
+    df = pd.DataFrame(raw_data, columns=["src", "trg"])
 
-SRC.build_vocab(train_data, min_freq = 2)
-TRG.build_vocab(train_data, min_freq = 2)
+    data_fields = [('src', SRC), ('trg', TRG)]
+    df.to_csv("translate_dataset_temp.csv", index=False)
+    dataset = data.TabularDataset('./translate_dataset_temp.csv', format='csv', fields=data_fields)
+    os.remove('translate_dataset_temp.csv')
+    return dataset
+
+train = generate_dataset(src_data_train, trg_data_train)
+test = generate_dataset(src_data_test, trg_data_test)
+dev = generate_dataset(src_data_dev, trg_data_dev)
+
+# train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), 
+#                                                     fields = (SRC, TRG))
+
+# print(vars(train_data.examples[0]))
+
+SRC.build_vocab(train, min_freq = 2)
+TRG.build_vocab(train, min_freq = 2)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -57,9 +101,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 BATCH_SIZE = 8
 
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
-    (train_data, valid_data, test_data), 
-    batch_size = BATCH_SIZE, 
-    device = device)
+    (train, dev, test), batch_size = BATCH_SIZE, device = device)
 
 class Encoder(nn.Module):
     def __init__(self, 
@@ -245,6 +287,13 @@ PAD_IDX = TRG.vocab.stoi['<pad>']
 
 criterion = nn.CrossEntropyLoss(ignore_index = PAD_IDX)
 
+def get_len(train):
+
+    for i, b in enumerate(train):
+        pass
+    
+    return i
+
 def train(model: nn.Module, 
           iterator: BucketIterator, 
           optimizer: optim.Adam, 
@@ -254,8 +303,11 @@ def train(model: nn.Module,
     model.train()
     
     epoch_loss = 0
+
+    total_len = get_len(iterator)
+    print(f'Iterator has {total_len} batches.')
     
-    for i, batch in enumerate(iterator):
+    for i, batch in tqdm(enumerate(iterator)):
         
         src = batch.src
         trg = batch.trg
@@ -295,7 +347,7 @@ def evaluate(model: nn.Module,
     
     with torch.no_grad():
     
-        for i, batch in enumerate(iterator):
+        for i, batch in tqdm(enumerate(iterator)):
 
             src = batch.src
             trg = batch.trg
