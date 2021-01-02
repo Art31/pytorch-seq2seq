@@ -97,11 +97,11 @@ TRG.build_vocab(train, min_freq = 2)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# BATCH_SIZE = 128
-BATCH_SIZE = 8
+BATCH_SIZE = 128
 
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
-    (train, dev, test), batch_size = BATCH_SIZE, device = device)
+    (train, dev, test), sort_key=lambda x: (len(x.src), len(x.trg)),
+     batch_size = BATCH_SIZE, device = device)
 
 class Encoder(nn.Module):
     def __init__(self, 
