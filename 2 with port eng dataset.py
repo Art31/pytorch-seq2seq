@@ -394,13 +394,13 @@ for epoch in range(N_EPOCHS):
     
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
-        torch.save(model.state_dict(), 'tut2-model.pt')
+        torch.save(model.state_dict(), 'seq2seq_weights/model_weights')
     
     print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
     print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
     print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
 
-model.load_state_dict(torch.load('tut2-model.pt'))
+model.load_state_dict(torch.load('seq2seq_weights/model_weights'))
 
 test_loss = evaluate(model, test_iterator, criterion)
 

@@ -47,7 +47,7 @@ TRG.build_vocab(train_data, min_freq=2)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-BATCH_SIZE = 128
+BATCH_SIZE = 8
 
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
     (train_data, valid_data, test_data), 
@@ -141,7 +141,7 @@ class PositionwiseFeedforward(nn.Module):
         self.fc_1 = nn.Conv1d(hid_dim, pf_dim, 1)
         self.fc_2 = nn.Conv1d(pf_dim, hid_dim, 1)
         
-        self.do = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(dropout)
         
     def forward(self, 
                 x: Tensor):
@@ -265,7 +265,7 @@ class DecoderLayer(nn.Module):
                  device: torch.device):
         super().__init__()
         
-        self.layer_nore = nn.LayerNorm(hid_dim)
+        self.layer_norm = nn.LayerNorm(hid_dim)
         self.self_attention = self_attention(hid_dim, n_heads, dropout, device)
         self.encoder_attention = self_attention(hid_dim, n_heads, dropout, device)
         self.positionwise_feedforward = positionwise_feedforward(hid_dim, pf_dim, dropout)
@@ -389,7 +389,7 @@ class Seq2Seq(nn.Module):
 
         trg_len = trg.shape[1]
         
-        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), dtype=torch.uint8, device=self.device))
+        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), dtype=torch.bool, device=self.device))
         
         trg_mask = trg_pad_mask & trg_sub_mask
         
