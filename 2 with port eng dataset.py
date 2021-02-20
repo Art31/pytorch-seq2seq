@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch import Tensor
+import dill as pickle
 
 from torchtext.datasets import TranslationDataset, Multi30k
 from torchtext.data import Field, BucketIterator
@@ -94,6 +95,18 @@ dev = generate_dataset(src_data_dev, trg_data_dev)
 
 SRC.build_vocab(train, min_freq = 2)
 TRG.build_vocab(train, min_freq = 2)
+
+save_folder = 'seq2seq_weights'
+try:
+    os.mkdir(save_folder)
+except:
+    print("Deleting and creating new weights folder. If this was unexpected, run program before 5s with -load_weights weights to load them")
+    time.sleep(5)
+    shutil.rmtree(save_folder)
+    os.mkdir(save_folder)
+
+pickle.dump(SRC, open(f'{save_folder}/SRC.pkl', 'wb'))
+pickle.dump(TRG, open(f'{save_folder}/TRG.pkl', 'wb'))
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -391,22 +404,16 @@ for epoch in range(N_EPOCHS):
     end_time = time.time()
     
     epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-    
-    folder = 'seq2seq_weights'
-    if os.path.isdir(folder):
-        pass 
-    else:
-        os.mkdir(folder)
 
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
-        torch.save(model.state_dict(), f'{folder}/model_weights')
+        torch.save(model.state_dict(), f'{save_folder}/model_weights')
     
     print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
     print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
     print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
 
-model.load_state_dict(torch.load(f'{folder}/model_weights'))
+model.load_state_dict(torch.load(f'{save_folder}/model_weights'))
 
 test_loss = evaluate(model, test_iterator, criterion)
 
