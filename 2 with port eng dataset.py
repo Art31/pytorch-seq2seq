@@ -97,7 +97,7 @@ TRG.build_vocab(train, min_freq = 2)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-BATCH_SIZE = 128
+BATCH_SIZE = 512
 
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
     (train, dev, test), sort_key=lambda x: (len(x.src), len(x.trg)),
@@ -376,7 +376,7 @@ def epoch_time(start_time: int,
     elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
     return elapsed_mins, elapsed_secs
 
-N_EPOCHS = 10
+N_EPOCHS = 60
 CLIP = 1
 
 best_valid_loss = float('inf')
