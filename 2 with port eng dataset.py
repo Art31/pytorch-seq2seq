@@ -392,15 +392,21 @@ for epoch in range(N_EPOCHS):
     
     epoch_mins, epoch_secs = epoch_time(start_time, end_time)
     
+    folder = 'seq2seq_weights'
+    if os.path.isdir(folder):
+        pass 
+    else:
+        os.mkdir(folder)
+
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
-        torch.save(model.state_dict(), 'seq2seq_weights/model_weights')
+        torch.save(model.state_dict(), f'{folder}/model_weights')
     
     print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
     print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
     print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
 
-model.load_state_dict(torch.load('seq2seq_weights/model_weights'))
+model.load_state_dict(torch.load(f'{folder}/model_weights'))
 
 test_loss = evaluate(model, test_iterator, criterion)
 
