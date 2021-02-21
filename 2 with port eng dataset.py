@@ -100,7 +100,7 @@ save_folder = 'seq2seq_weights'
 try:
     os.mkdir(save_folder)
 except:
-    print("Deleting and creating new weights folder. If this was unexpected, run program before 5s with -load_weights weights to load them")
+    print("Deleting and creating new weights folder. In 5s this operation will be executed")
     time.sleep(5)
     shutil.rmtree(save_folder)
     os.mkdir(save_folder)
