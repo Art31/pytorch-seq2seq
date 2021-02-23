@@ -7,8 +7,9 @@ import dill as pickle
 from torchtext.datasets import TranslationDataset, Multi30k
 from torchtext.data import Field, BucketIterator
 from torchtext import data
+from Tokenize import tokenize
 
-import spacy
+import spacy, shutil
 from tqdm import tqdm 
 import pandas as pd
 import random, os
@@ -20,20 +21,25 @@ random.seed(SEED)
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
-spacy_pt = spacy.load('pt_core_news_md')
-spacy_en = spacy.load('en_core_web_md')
+# ------ OLD TOKENIZER ------ #
+# spacy_pt = spacy.load('pt_core_news_md')
+# spacy_en = spacy.load('en_core_web_md')
 
-def tokenize_pt(text):
-    """
-    Tokenizes Port text from a string into a list of strings
-    """
-    return [tok.text for tok in spacy_pt.tokenizer(text)]
+# def tokenize_pt(text):
+#     """
+#     Tokenizes Port text from a string into a list of strings
+#     """
+#     return [tok.text for tok in spacy_pt.tokenizer(text)]
 
-def tokenize_en(text):
-    """
-    Tokenizes English text from a string into a list of strings
-    """
-    return [tok.text for tok in spacy_en.tokenizer(text)]
+# def tokenize_en(text):
+#     """
+#     Tokenizes English text from a string into a list of strings
+#     """
+#     return [tok.text for tok in spacy_en.tokenizer(text)]
+# ------------------------- # 
+
+t_src = tokenize('pt_core_news_md')
+t_trg = tokenize('en_core_web_md')
 
 def read_data(src_data, trg_data):
     
@@ -63,12 +69,12 @@ src_data_train, trg_data_train = read_data(src_train_data_path, trg_train_data_p
 src_data_test, trg_data_test = read_data(src_test_data_path, trg_test_data_path)
 src_data_dev, trg_data_dev = read_data(src_dev_data_path, trg_dev_data_path)
 
-SRC = Field(tokenize=tokenize_pt, 
+SRC = Field(tokenize=t_src.tokenizer, 
             init_token='<sos>', 
             eos_token='<eos>', 
             lower=True)
 
-TRG = Field(tokenize = tokenize_en, 
+TRG = Field(tokenize = t_trg.tokenizer, 
             init_token='<sos>', 
             eos_token='<eos>', 
             lower=True)
