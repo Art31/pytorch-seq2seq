@@ -279,8 +279,8 @@ OUTPUT_DIM = len(TRG.vocab)
 ENC_EMB_DIM = 256
 DEC_EMB_DIM = 256
 HID_DIM = 512
-ENC_DROPOUT = 0.5
-DEC_DROPOUT = 0.5
+ENC_DROPOUT = 0.1
+DEC_DROPOUT = 0.1
 
 enc = Encoder(INPUT_DIM, ENC_EMB_DIM, HID_DIM, ENC_DROPOUT)
 dec = Decoder(OUTPUT_DIM, DEC_EMB_DIM, HID_DIM, DEC_DROPOUT)
@@ -333,7 +333,7 @@ def train(model: nn.Module,
         
         optimizer.zero_grad()
         
-        output = model(src, trg)
+        output = model(src, trg, 0)
         
         #trg = [trg sent len, batch size]
         #output = [trg sent len, batch size, output dim]
